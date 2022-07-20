@@ -1,47 +1,95 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Browser.Events exposing (onAnimationFrameDelta)
+import Canvas exposing (rect, shapes)
+import Canvas.Settings exposing (fill)
+import Canvas.Settings.Advanced exposing (rotate, transform, translate)
+import Color
+import Html exposing (Html, div)
+import Html.Attributes exposing (style)
 
 
 type alias Model =
-    { count : Int }
-
-
-initialModel : Model
-initialModel =
-    { count = 0 }
+    { count : Float }
 
 
 type Msg
-    = Increment
-    | Decrement
-
-
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        Increment ->
-            { model | count = model.count + 1 }
-
-        Decrement ->
-            { model | count = model.count - 1 }
-
-
-view : Model -> Html Msg
-view model =
-    div []
-        [ button [ onClick Increment ] [ text "+1" ]
-        , div [] [ text <| String.fromInt model.count ]
-        , button [ onClick Decrement ] [ text "-1" ]
-        ]
+    = Frame Float
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = initialModel
+    Browser.element
+        { init = \() -> ( { count = 0 }, Cmd.none )
         , view = view
-        , update = update
+        , update =
+            \msg model ->
+                case msg of
+                    Frame _ ->
+                        ( { model | count = model.count + 1 }, Cmd.none )
+        , subscriptions = \model -> onAnimationFrameDelta Frame
         }
+
+
+width =
+    400
+
+
+height =
+    400
+
+
+centerX =
+    width / 2
+
+
+centerY =
+    height / 2
+
+
+view : Model -> Html Msg
+view { count } =
+    div
+        [ style "display" "flex"
+        , style "justify-content" "center"
+        , style "align-items" "center"
+        ]
+        [ Canvas.toHtml
+            ( width, height )
+            [ style "border" "10px solid rgba(0,0,0,0.1)" ]
+            [ clearScreen
+            , render count
+            ]
+        ]
+
+
+clearScreen =
+    shapes [ fill Color.white ] [ rect ( 0, 0 ) width height ]
+
+
+render count =
+    let
+        size =
+            width / 3
+
+        x =
+            -(size / 2)
+
+        y =
+            -(size / 2)
+
+        rotation =
+            degrees (count * 3)
+
+        hue =
+            toFloat (count / 4 |> floor |> modBy 100) / 100
+    in
+    shapes
+        [ transform
+            [ translate centerX centerY
+            , rotate rotation
+            ]
+        , fill (Color.hsl hue 0.3 0.7)
+        ]
+        [ rect ( x, y ) size size ]
