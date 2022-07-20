@@ -1,30 +1,47 @@
 module Main exposing (main)
 
 import Browser
-import HelloWorld exposing (helloWorld)
-import Html exposing (Html, div, img)
-import Html.Attributes exposing (src, style)
-import Msg exposing (Msg(..))
+import Html exposing (Html, button, div, text)
+import Html.Events exposing (onClick)
 
 
-main : Program () Int Msg
-main =
-    Browser.sandbox { init = 0, update = update, view = view }
+type alias Model =
+    { count : Int }
 
 
-update : Msg -> number -> number
+initialModel : Model
+initialModel =
+    { count = 0 }
+
+
+type Msg
+    = Increment
+    | Decrement
+
+
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         Increment ->
-            model + 1
+            { model | count = model.count + 1 }
 
         Decrement ->
-            model - 1
+            { model | count = model.count - 1 }
 
 
-view : Int -> Html Msg
+view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.png", style "width" "300px" ] []
-        , helloWorld model
+        [ button [ onClick Increment ] [ text "+1" ]
+        , div [] [ text <| String.fromInt model.count ]
+        , button [ onClick Decrement ] [ text "-1" ]
         ]
+
+
+main : Program () Model Msg
+main =
+    Browser.sandbox
+        { init = initialModel
+        , view = view
+        , update = update
+        }
