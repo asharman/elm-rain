@@ -2,42 +2,25 @@ module Main exposing (main)
 
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta)
-import Canvas exposing (rect, shapes)
-import Canvas.Settings exposing (fill)
-import Canvas.Settings.Advanced exposing (rotate, transform, translate)
+import Canvas
+import Canvas.Settings as Canvas
+import Canvas.Settings.Advanced as Canvas
+import Canvas.Settings.Line as Canvas
 import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
 
 
-type alias Model =
-    { count : Float }
 
-
-type Msg
-    = Frame Float
-
-
-main : Program () Model Msg
-main =
-    Browser.element
-        { init = \() -> ( { count = 0 }, Cmd.none )
-        , view = view
-        , update =
-            \msg model ->
-                case msg of
-                    Frame _ ->
-                        ( { model | count = model.count + 1 }, Cmd.none )
-        , subscriptions = \model -> onAnimationFrameDelta Frame
-        }
+-- CONSTANTS
 
 
 width =
-    400
+    1000
 
 
 height =
-    400
+    800
 
 
 centerX =
@@ -48,8 +31,34 @@ centerY =
     height / 2
 
 
+type alias Model =
+    { position : Canvas.Point }
+
+
+initialModel =
+    { position = ( centerX, centerY ) }
+
+
+type Msg
+    = Frame Float
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = \() -> ( initialModel, Cmd.none )
+        , view = view
+        , update =
+            \msg model ->
+                case msg of
+                    Frame _ ->
+                        ( model, Cmd.none )
+        , subscriptions = \model -> onAnimationFrameDelta Frame
+        }
+
+
 view : Model -> Html Msg
-view { count } =
+view { position } =
     div
         [ style "display" "flex"
         , style "justify-content" "center"
@@ -57,39 +66,41 @@ view { count } =
         ]
         [ Canvas.toHtml
             ( width, height )
-            [ style "border" "10px solid rgba(0,0,0,0.1)" ]
+            []
             [ clearScreen
-            , render count
+            , renderArrow position
             ]
         ]
 
 
+clearScreen : Canvas.Renderable
 clearScreen =
-    shapes [ fill Color.white ] [ rect ( 0, 0 ) width height ]
+    Canvas.shapes [ Canvas.fill Color.darkCharcoal ] [ Canvas.rect ( 0, 0 ) width height ]
 
 
-render count =
+renderArrow : Canvas.Point -> Canvas.Renderable
+renderArrow position =
     let
-        size =
-            width / 3
-
         x =
-            -(size / 2)
+            Tuple.first position
 
         y =
-            -(size / 2)
+            Tuple.second position
 
-        rotation =
-            degrees (count * 3)
-
-        hue =
-            toFloat (count / 4 |> floor |> modBy 100) / 100
+        slopeAngle =
+            atan2 y x
     in
-    shapes
-        [ transform
-            [ translate centerX centerY
-            , rotate rotation
-            ]
-        , fill (Color.hsl hue 0.3 0.7)
+    Canvas.shapes
+        [ Canvas.stroke (Color.rgb 0.2 0.2 0.7)
+        , Canvas.fill (Color.rgb 0.2 0.2 0.7)
+        , Canvas.lineWidth 5.0
+        , Canvas.lineCap Canvas.RoundCap
         ]
-        [ rect ( x, y ) size size ]
+        [ Canvas.path ( 0, 0 ) <|
+            [ Canvas.lineTo position
+            , Canvas.moveTo position
+            , Canvas.lineTo ( x - (15 * cos (slopeAngle + (pi / 7))), y - (15 * sin (slopeAngle + pi / 7)) )
+            , Canvas.lineTo ( x - (15 * cos (slopeAngle - (pi / 7))), y - (15 * sin (slopeAngle - pi / 7)) )
+            , Canvas.lineTo position
+            ]
+        ]
