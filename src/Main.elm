@@ -1,15 +1,13 @@
-module Main exposing (main)
+module Main exposing (Model, Msg, main)
 
 import Browser
 import Browser.Dom exposing (Viewport, getViewport)
 import Browser.Events exposing (onAnimationFrameDelta, onResize)
 import Canvas
 import Canvas.Settings as Canvas
-import Canvas.Settings.Advanced as Canvas
-import Canvas.Settings.Line as Canvas
 import Color
 import Html exposing (Html, div)
-import Html.Attributes exposing (style, width)
+import Html.Attributes exposing (style)
 import Task
 import Vector exposing (Vector)
 
@@ -33,7 +31,7 @@ initialModel =
 
 
 type Msg
-    = Frame Float
+    = Frame
     | GetViewPort Viewport
     | BrowserResized Int Int
 
@@ -46,7 +44,7 @@ main =
         , update =
             \msg model ->
                 case msg of
-                    Frame _ ->
+                    Frame ->
                         ( model, Cmd.none )
 
                     GetViewPort data ->
@@ -76,7 +74,7 @@ main =
         , subscriptions =
             \_ ->
                 Sub.batch
-                    [ onAnimationFrameDelta Frame
+                    [ onAnimationFrameDelta (\_ -> Frame)
                     , onResize BrowserResized
                     ]
         }

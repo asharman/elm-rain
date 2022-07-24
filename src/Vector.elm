@@ -10,14 +10,12 @@ type alias Vector =
     ( Float, Float )
 
 
-type alias Config =
+renderArrow :
     { from : Vector
     , to : Vector
     , color : Color.Color
     }
-
-
-renderArrow : Config -> Canvas.Renderable
+    -> Canvas.Renderable
 renderArrow { from, to, color } =
     let
         fromX =
