@@ -1,4 +1,4 @@
-module Arrow exposing (render)
+module Vector exposing (Vector, renderArrow)
 
 import Canvas
 import Canvas.Settings as Canvas
@@ -6,15 +6,19 @@ import Canvas.Settings.Line as Canvas
 import Color
 
 
+type alias Vector =
+    ( Float, Float )
+
+
 type alias Config =
-    { from : Canvas.Point
-    , to : Canvas.Point
+    { from : Vector
+    , to : Vector
     , color : Color.Color
     }
 
 
-render : Config -> Canvas.Renderable
-render { from, to, color } =
+renderArrow : Config -> Canvas.Renderable
+renderArrow { from, to, color } =
     let
         fromX =
             Tuple.first from

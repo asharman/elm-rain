@@ -1,6 +1,5 @@
 module Main exposing (main)
 
-import Arrow
 import Browser
 import Browser.Dom exposing (Viewport, getViewport)
 import Browser.Events exposing (onAnimationFrameDelta, onResize)
@@ -12,21 +11,23 @@ import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style, width)
 import Task
+import Vector exposing (Vector)
 
 
 
 -- CONSTANTS
 
 
-origin : Canvas.Point
+origin : Vector
 origin =
     ( 0, 0 )
 
 
 type alias Model =
-    { width : Float, height : Float, position : Canvas.Point }
+    { width : Float, height : Float, position : Vector }
 
 
+initialModel : Model
 initialModel =
     { width = 400, height = 400, position = ( 200, 200 ) }
 
@@ -92,11 +93,11 @@ view { width, height, position } =
             ( round width, round height )
             []
             [ clearScreen width height
-            , Arrow.render { from = origin, to = position, color = Color.rgb 0.3 0.3 1.0 }
+            , Vector.renderArrow { from = origin, to = position, color = Color.rgb 0.25 0.25 1.0 }
             ]
         ]
 
 
 clearScreen : Float -> Float -> Canvas.Renderable
 clearScreen width height =
-    Canvas.shapes [ Canvas.fill Color.darkCharcoal ] [ Canvas.rect ( 0, 0 ) width height ]
+    Canvas.shapes [ Canvas.fill Color.black ] [ Canvas.rect ( 0, 0 ) width height ]
