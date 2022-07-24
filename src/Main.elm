@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Arrow
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta)
 import Canvas
@@ -29,6 +30,11 @@ centerX =
 
 centerY =
     height / 2
+
+
+origin : Canvas.Point
+origin =
+    ( 0, 0 )
 
 
 type alias Model =
@@ -68,7 +74,7 @@ view { position } =
             ( width, height )
             []
             [ clearScreen
-            , renderArrow position
+            , Arrow.render { from = origin, to = position, color = Color.rgb 0.3 0.3 1.0 }
             ]
         ]
 
@@ -76,31 +82,3 @@ view { position } =
 clearScreen : Canvas.Renderable
 clearScreen =
     Canvas.shapes [ Canvas.fill Color.darkCharcoal ] [ Canvas.rect ( 0, 0 ) width height ]
-
-
-renderArrow : Canvas.Point -> Canvas.Renderable
-renderArrow position =
-    let
-        x =
-            Tuple.first position
-
-        y =
-            Tuple.second position
-
-        slopeAngle =
-            atan2 y x
-    in
-    Canvas.shapes
-        [ Canvas.stroke (Color.rgb 0.2 0.2 0.7)
-        , Canvas.fill (Color.rgb 0.2 0.2 0.7)
-        , Canvas.lineWidth 5.0
-        , Canvas.lineCap Canvas.RoundCap
-        ]
-        [ Canvas.path ( 0, 0 ) <|
-            [ Canvas.lineTo position
-            , Canvas.moveTo position
-            , Canvas.lineTo ( x - (15 * cos (slopeAngle + (pi / 7))), y - (15 * sin (slopeAngle + pi / 7)) )
-            , Canvas.lineTo ( x - (15 * cos (slopeAngle - (pi / 7))), y - (15 * sin (slopeAngle - pi / 7)) )
-            , Canvas.lineTo position
-            ]
-        ]
