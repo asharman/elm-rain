@@ -83,9 +83,6 @@ update deltaTime worldInfo (Internal drop) =
 isRaindropOffScreen : Float -> Vector -> Bool
 isRaindropOffScreen screenHeight ( _, yPos ) =
     yPos > screenHeight
-isRaindropOffScreen : Float -> Vector -> Bool
-isRaindropOffScreen screenHeight ( _, yPos ) =
-    yPos > screenHeight
 
 
 renderDebug : Raindrop -> Canvas.Renderable
