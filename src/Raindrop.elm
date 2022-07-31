@@ -58,26 +58,31 @@ render (Internal drop) debug =
         ]
 
 
-update : Float -> WorldInfo -> Raindrop -> Raindrop
+update : Float -> WorldInfo -> Raindrop -> ( Raindrop, Random.Seed )
 update deltaTime worldInfo (Internal drop) =
     let
         scaledVelocity =
             Vector.scale deltaTime Constants.gravity
 
-        ( updatedPosition, _ ) =
+        ( updatedPosition, seed ) =
             if isRaindropOffScreen worldInfo.canvasHeight drop.position then
                 Random.step (Vector.randomVectorAboveCanvas worldInfo.canvasWidth) worldInfo.randomSeed
 
             else
                 ( Vector.add drop.position scaledVelocity, worldInfo.randomSeed )
     in
-    Internal
+    ( Internal
         { drop
             | velocity = scaledVelocity
             , position = updatedPosition
         }
+    , seed
+    )
 
 
+isRaindropOffScreen : Float -> Vector -> Bool
+isRaindropOffScreen screenHeight ( _, yPos ) =
+    yPos > screenHeight
 isRaindropOffScreen : Float -> Vector -> Bool
 isRaindropOffScreen screenHeight ( _, yPos ) =
     yPos > screenHeight

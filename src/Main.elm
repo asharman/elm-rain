@@ -72,8 +72,13 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Frame deltaTime ->
+            let
+                ( newDrop, newSeed ) =
+                    Raindrop.update deltaTime (toWorldInfo model) model.raindrop
+            in
             ( { model
-                | raindrop = Raindrop.update deltaTime (toWorldInfo model) model.raindrop
+                | raindrop = newDrop
+                , seed = newSeed
               }
             , Cmd.none
             )
