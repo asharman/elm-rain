@@ -1,4 +1,12 @@
-module Vector exposing (Vector, origin, randomVectorInCanvas, renderArrow)
+module Vector exposing
+    ( Vector
+    , add
+    , gravity
+    , origin
+    , randomVectorInCanvas
+    , renderArrow
+    , scale
+    )
 
 import Canvas
 import Canvas.Settings as Canvas
@@ -12,8 +20,23 @@ origin =
     ( 0, 0 )
 
 
+gravity : Vector
+gravity =
+    ( 0, 1 )
+
+
 type alias Vector =
     ( Float, Float )
+
+
+add : Vector -> Vector -> Vector
+add ( x1, y1 ) ( x2, y2 ) =
+    ( x1 + x2, y1 + y2 )
+
+
+scale : Float -> Vector -> Vector
+scale factor ( x, y ) =
+    ( x * factor, y * factor )
 
 
 randomVectorInCanvas : Float -> Float -> Random.Generator Vector

@@ -11,7 +11,6 @@ import Html.Attributes as Attributes
 import Html.Events as Events
 import Raindrop exposing (Raindrop)
 import Task
-import Vector exposing (Vector)
 
 
 
@@ -31,12 +30,12 @@ initialModel =
     { width = 400
     , height = 400
     , raindrop = Raindrop.centeredRainDrop 400 400
-    , debug = False
+    , debug = True
     }
 
 
 type Msg
-    = Frame
+    = Frame Float
     | GetViewPort Viewport
     | BrowserResized Int Int
     | DebugChecked Bool
@@ -51,7 +50,7 @@ main =
         , subscriptions =
             \_ ->
                 Sub.batch
-                    [ onAnimationFrameDelta (\_ -> Frame)
+                    [ onAnimationFrameDelta Frame
                     , onResize BrowserResized
                     ]
         }
@@ -60,8 +59,12 @@ main =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Frame ->
-            ( model, Cmd.none )
+        Frame deltaTime ->
+            ( { model
+                | raindrop = Raindrop.update deltaTime model.raindrop
+              }
+            , Cmd.none
+            )
 
         GetViewPort data ->
             ( { model
