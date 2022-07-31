@@ -8,6 +8,7 @@ import Canvas.Settings as Canvas
 import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
+import Raindrop exposing (Raindrop)
 import Task
 import Vector exposing (Vector)
 
@@ -22,12 +23,12 @@ origin =
 
 
 type alias Model =
-    { width : Float, height : Float, position : Vector }
+    { width : Float, height : Float, raindrop : Raindrop }
 
 
 initialModel : Model
 initialModel =
-    { width = 400, height = 400, position = ( 200, 200 ) }
+    { width = 400, height = 400, raindrop = Raindrop.centeredRainDrop 400 400 }
 
 
 type Msg
@@ -51,7 +52,7 @@ main =
                         ( { model
                             | width = data.viewport.width
                             , height = data.viewport.height
-                            , position = ( data.viewport.width / 2, data.viewport.height / 2 )
+                            , raindrop = Raindrop.centeredRainDrop data.viewport.width data.viewport.height
                           }
                         , Cmd.none
                         )
@@ -67,7 +68,7 @@ main =
                         ( { model
                             | width = width
                             , height = height
-                            , position = ( width / 2, height / 2 )
+                            , raindrop = Raindrop.centeredRainDrop width height
                           }
                         , Cmd.none
                         )
@@ -81,7 +82,7 @@ main =
 
 
 view : Model -> Html Msg
-view { width, height, position } =
+view { width, height, raindrop } =
     div
         [ style "display" "flex"
         , style "justify-content" "center"
@@ -91,11 +92,17 @@ view { width, height, position } =
             ( round width, round height )
             []
             [ clearScreen width height
-            , Vector.renderArrow { from = origin, to = position, color = Color.rgb 0.25 0.25 1.0 }
+            , Raindrop.render raindrop
+            , Vector.renderArrow
+                { from = origin
+                , to = Raindrop.position raindrop
+                , color = Color.rgb 0.25 0.25 1.0
+                }
             ]
         ]
 
 
 clearScreen : Float -> Float -> Canvas.Renderable
 clearScreen width height =
-    Canvas.shapes [ Canvas.fill Color.black ] [ Canvas.rect ( 0, 0 ) width height ]
+    Canvas.shapes [ Canvas.fill Color.black ]
+        [ Canvas.rect ( 0, 0 ) width height ]

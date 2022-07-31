@@ -1,13 +1,23 @@
-module Vector exposing (Vector, renderArrow)
+module Vector exposing (Vector, randomVectorInCanvas, renderArrow)
 
 import Canvas
 import Canvas.Settings as Canvas
 import Canvas.Settings.Line as Canvas
 import Color
+import Random
 
 
 type alias Vector =
     ( Float, Float )
+
+
+randomVectorInCanvas : Float -> Float -> Random.Generator Vector
+randomVectorInCanvas width height =
+    let
+        randomFloat limit =
+            Random.float 0.0 limit
+    in
+    Random.map2 (\w h -> ( w, h )) (randomFloat width) (randomFloat height)
 
 
 renderArrow :
