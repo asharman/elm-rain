@@ -33,9 +33,25 @@ position (Internal data) =
     data.position
 
 
-render : Raindrop -> Canvas.Renderable
-render (Internal drop) =
-    Canvas.shapes
-        [ Canvas.fill drop.color
+render : Raindrop -> Bool -> Canvas.Renderable
+render (Internal drop) debug =
+    Canvas.group []
+        [ Canvas.shapes
+            [ Canvas.fill drop.color
+            ]
+            [ Canvas.rect drop.position 4 20 ]
+        , if debug then
+            renderDebug (Internal drop)
+
+          else
+            Canvas.text [] Vector.origin ""
         ]
-        [ Canvas.rect drop.position 4 20 ]
+
+
+renderDebug : Raindrop -> Canvas.Renderable
+renderDebug (Internal drop) =
+    Vector.renderArrow
+        { from = Vector.origin
+        , to = drop.position
+        , color = Color.rgb 0.25 0.25 1.0
+        }

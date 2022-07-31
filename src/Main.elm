@@ -6,8 +6,9 @@ import Browser.Events exposing (onAnimationFrameDelta, onResize)
 import Canvas
 import Canvas.Settings as Canvas
 import Color
-import Html exposing (Html, div)
-import Html.Attributes exposing (style)
+import Html exposing (Html)
+import Html.Attributes as Attributes
+import Html.Events as Events
 import Raindrop exposing (Raindrop)
 import Task
 import Vector exposing (Vector)
@@ -17,24 +18,28 @@ import Vector exposing (Vector)
 -- CONSTANTS
 
 
-origin : Vector
-origin =
-    ( 0, 0 )
-
-
 type alias Model =
-    { width : Float, height : Float, raindrop : Raindrop }
+    { width : Float
+    , height : Float
+    , raindrop : Raindrop
+    , debug : Bool
+    }
 
 
 initialModel : Model
 initialModel =
-    { width = 400, height = 400, raindrop = Raindrop.centeredRainDrop 400 400 }
+    { width = 400
+    , height = 400
+    , raindrop = Raindrop.centeredRainDrop 400 400
+    , debug = False
+    }
 
 
 type Msg
     = Frame
     | GetViewPort Viewport
     | BrowserResized Int Int
+    | DebugChecked Bool
 
 
 main : Program () Model Msg
@@ -42,36 +47,7 @@ main =
     Browser.element
         { init = \() -> ( initialModel, Task.perform GetViewPort getViewport )
         , view = view
-        , update =
-            \msg model ->
-                case msg of
-                    Frame ->
-                        ( model, Cmd.none )
-
-                    GetViewPort data ->
-                        ( { model
-                            | width = data.viewport.width
-                            , height = data.viewport.height
-                            , raindrop = Raindrop.centeredRainDrop data.viewport.width data.viewport.height
-                          }
-                        , Cmd.none
-                        )
-
-                    BrowserResized w h ->
-                        let
-                            width =
-                                toFloat w
-
-                            height =
-                                toFloat h
-                        in
-                        ( { model
-                            | width = width
-                            , height = height
-                            , raindrop = Raindrop.centeredRainDrop width height
-                          }
-                        , Cmd.none
-                        )
+        , update = update
         , subscriptions =
             \_ ->
                 Sub.batch
@@ -81,23 +57,79 @@ main =
         }
 
 
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Frame ->
+            ( model, Cmd.none )
+
+        GetViewPort data ->
+            ( { model
+                | width = data.viewport.width
+                , height = data.viewport.height
+                , raindrop = Raindrop.centeredRainDrop data.viewport.width data.viewport.height
+              }
+            , Cmd.none
+            )
+
+        BrowserResized w h ->
+            let
+                width =
+                    toFloat w
+
+                height =
+                    toFloat h
+            in
+            ( { model
+                | width = width
+                , height = height
+                , raindrop = Raindrop.centeredRainDrop width height
+              }
+            , Cmd.none
+            )
+
+        DebugChecked value ->
+            ( { model | debug = value }, Cmd.none )
+
+
 view : Model -> Html Msg
-view { width, height, raindrop } =
-    div
-        [ style "display" "flex"
-        , style "justify-content" "center"
-        , style "align-items" "center"
+view { width, height, raindrop, debug } =
+    Html.div
+        [ Attributes.style "position" "relative"
+        , Attributes.style "padding" "0"
+        , Attributes.style "margin" "0"
         ]
-        [ Canvas.toHtml
-            ( round width, round height )
-            []
-            [ clearScreen width height
-            , Raindrop.render raindrop
-            , Vector.renderArrow
-                { from = origin
-                , to = Raindrop.position raindrop
-                , color = Color.rgb 0.25 0.25 1.0
-                }
+        [ Html.div
+            [ Attributes.style "display" "flex"
+            , Attributes.style "justify-content" "center"
+            , Attributes.style "align-items" "center"
+            ]
+            [ Canvas.toHtml
+                ( round width, round height )
+                []
+                [ clearScreen width height
+                , Raindrop.render raindrop debug
+                ]
+            ]
+        , Html.div
+            [ Attributes.style "position" "absolute"
+            , Attributes.style "bottom" "1rem"
+            , Attributes.style "left" "1rem"
+            ]
+            [ Html.label
+                [ Attributes.style "display" "flex"
+                , Attributes.style "gap" "0.5rem"
+                ]
+                [ Html.input
+                    [ Attributes.type_ "checkbox"
+                    , Attributes.style "padding" "0"
+                    , Attributes.style "margin" "0"
+                    , Attributes.checked debug
+                    , Events.onCheck DebugChecked
+                    ]
+                    []
+                , Html.text "Debug"
+                ]
             ]
         ]
 

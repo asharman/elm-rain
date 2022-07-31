@@ -1,10 +1,15 @@
-module Vector exposing (Vector, randomVectorInCanvas, renderArrow)
+module Vector exposing (Vector, origin, randomVectorInCanvas, renderArrow)
 
 import Canvas
 import Canvas.Settings as Canvas
 import Canvas.Settings.Line as Canvas
 import Color
 import Random
+
+
+origin : Vector
+origin =
+    ( 0, 0 )
 
 
 type alias Vector =
