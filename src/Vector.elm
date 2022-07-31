@@ -1,9 +1,7 @@
 module Vector exposing
     ( Vector
     , add
-    , gravity
-    , origin
-    , randomVectorInCanvas
+    , randomVectorAboveCanvas
     , renderArrow
     , scale
     )
@@ -13,16 +11,6 @@ import Canvas.Settings as Canvas
 import Canvas.Settings.Line as Canvas
 import Color
 import Random
-
-
-origin : Vector
-origin =
-    ( 0, 0 )
-
-
-gravity : Vector
-gravity =
-    ( 0, 1 )
 
 
 type alias Vector =
@@ -39,13 +27,9 @@ scale factor ( x, y ) =
     ( x * factor, y * factor )
 
 
-randomVectorInCanvas : Float -> Float -> Random.Generator Vector
-randomVectorInCanvas width height =
-    let
-        randomFloat limit =
-            Random.float 0.0 limit
-    in
-    Random.map2 (\w h -> ( w, h )) (randomFloat width) (randomFloat height)
+randomVectorAboveCanvas : Float -> Random.Generator Vector
+randomVectorAboveCanvas width =
+    Random.map2 (\w h -> ( w, h )) (Random.float 0.0 width) (Random.float -100.0 -10.0)
 
 
 renderArrow :

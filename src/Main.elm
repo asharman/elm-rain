@@ -6,10 +6,12 @@ import Browser.Events exposing (onAnimationFrameDelta, onResize)
 import Canvas
 import Canvas.Settings as Canvas
 import Color
+import Constants exposing (WorldInfo)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Raindrop exposing (Raindrop)
+import Random
 import Task
 
 
@@ -22,6 +24,7 @@ type alias Model =
     , height : Float
     , raindrop : Raindrop
     , debug : Bool
+    , seed : Random.Seed
     }
 
 
@@ -31,6 +34,15 @@ initialModel =
     , height = 400
     , raindrop = Raindrop.centeredRainDrop 400 400
     , debug = True
+    , seed = Random.initialSeed 1
+    }
+
+
+toWorldInfo : Model -> WorldInfo
+toWorldInfo model =
+    { canvasHeight = model.height
+    , canvasWidth = model.width
+    , randomSeed = model.seed
     }
 
 
@@ -61,7 +73,7 @@ update msg model =
     case msg of
         Frame deltaTime ->
             ( { model
-                | raindrop = Raindrop.update deltaTime model.raindrop
+                | raindrop = Raindrop.update deltaTime (toWorldInfo model) model.raindrop
               }
             , Cmd.none
             )
