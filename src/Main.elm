@@ -10,6 +10,7 @@ import Constants exposing (WorldInfo)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Json.Decode as Decode
 import Raindrop exposing (Raindrop)
 import Random
 import Task
@@ -24,6 +25,7 @@ type alias Model =
     , height : Float
     , raindrop : Raindrop
     , debug : Bool
+    , numberOfDrops : Int
     , seed : Random.Seed
     }
 
@@ -34,6 +36,7 @@ initialModel =
     , height = 400
     , raindrop = Raindrop.centeredRainDrop 400 400
     , debug = True
+    , numberOfDrops = 1
     , seed = Random.initialSeed 1
     }
 
@@ -51,6 +54,7 @@ type Msg
     | GetViewPort Viewport
     | BrowserResized Int Int
     | DebugChecked Bool
+    | NumberOfDropsChanged Int
 
 
 main : Program () Model Msg
@@ -111,9 +115,12 @@ update msg model =
         DebugChecked value ->
             ( { model | debug = value }, Cmd.none )
 
+        NumberOfDropsChanged numOfDrops ->
+            ( { model | numberOfDrops = numOfDrops }, Cmd.none )
+
 
 view : Model -> Html Msg
-view { width, height, raindrop, debug } =
+view model =
     Html.div
         [ Attributes.style "position" "relative"
         , Attributes.style "padding" "0"
@@ -125,10 +132,10 @@ view { width, height, raindrop, debug } =
             , Attributes.style "align-items" "center"
             ]
             [ Canvas.toHtml
-                ( round width, round height )
+                ( round model.width, round model.height )
                 []
-                [ clearScreen width height
-                , Raindrop.render raindrop debug
+                [ clearScreen model.width model.height
+                , Raindrop.render model.raindrop model.debug
                 ]
             ]
         , Html.div
@@ -144,14 +151,45 @@ view { width, height, raindrop, debug } =
                     [ Attributes.type_ "checkbox"
                     , Attributes.style "padding" "0"
                     , Attributes.style "margin" "0"
-                    , Attributes.checked debug
+                    , Attributes.checked model.debug
                     , Events.onCheck DebugChecked
                     ]
                     []
                 , Html.text "Debug"
                 ]
+            , Html.label
+                []
+                [ Html.input
+                    [ Attributes.type_ "number"
+                    , Attributes.max "100"
+                    , Attributes.min "1"
+                    , Attributes.value (String.fromInt model.numberOfDrops)
+                    , onPositiveIntInput NumberOfDropsChanged
+                    ]
+                    []
+                ]
             ]
         ]
+
+
+onPositiveIntInput : (Int -> Msg) -> Html.Attribute Msg
+onPositiveIntInput tagger =
+    let
+        intDecoder =
+            \val ->
+                case String.toInt val of
+                    Just f ->
+                        if f >= 0 then
+                            Decode.succeed f
+
+                        else
+                            Decode.fail "Integer is negative"
+
+                    Nothing ->
+                        Decode.fail "Not an Integer"
+    in
+    Events.on "input" <|
+        Decode.map tagger (Events.targetValue |> Decode.andThen intDecoder)
 
 
 clearScreen : Float -> Float -> Canvas.Renderable
