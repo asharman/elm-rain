@@ -43,8 +43,8 @@ position (Internal data) =
     data.position
 
 
-render : Raindrop -> Bool -> Canvas.Renderable
-render (Internal drop) debug =
+render : Bool -> Raindrop -> Canvas.Renderable
+render debug (Internal drop) =
     Canvas.group []
         [ if debug then
             renderDebug (Internal drop)

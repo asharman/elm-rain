@@ -11,6 +11,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Json.Decode as Decode
+import List
 import Raindrop exposing (Raindrop)
 import Random
 import Task
@@ -23,7 +24,7 @@ import Task
 type alias Model =
     { width : Float
     , height : Float
-    , raindrop : Raindrop
+    , raindrops : List Raindrop
     , debug : Bool
     , numberOfDrops : Int
     , seed : Random.Seed
@@ -34,7 +35,7 @@ initialModel : Model
 initialModel =
     { width = 400
     , height = 400
-    , raindrop = Raindrop.centeredRainDrop 400 400
+    , raindrops = [ Raindrop.centeredRainDrop 400 400 ]
     , debug = True
     , numberOfDrops = 1
     , seed = Random.initialSeed 1
@@ -77,11 +78,18 @@ update msg model =
     case msg of
         Frame deltaTime ->
             let
-                ( newDrop, newSeed ) =
-                    Raindrop.update deltaTime (toWorldInfo model) model.raindrop
+                ( newDrops, newSeed ) =
+                    List.foldl
+                        (\drop ( acc, _ ) ->
+                            drop
+                                |> Raindrop.update deltaTime (toWorldInfo model)
+                                |> Tuple.mapFirst (List.singleton >> List.append acc)
+                        )
+                        ( [], model.seed )
+                        model.raindrops
             in
             ( { model
-                | raindrop = newDrop
+                | raindrops = newDrops
                 , seed = newSeed
               }
             , Cmd.none
@@ -91,7 +99,6 @@ update msg model =
             ( { model
                 | width = data.viewport.width
                 , height = data.viewport.height
-                , raindrop = Raindrop.centeredRainDrop data.viewport.width data.viewport.height
               }
             , Cmd.none
             )
@@ -107,7 +114,6 @@ update msg model =
             ( { model
                 | width = width
                 , height = height
-                , raindrop = Raindrop.centeredRainDrop width height
               }
             , Cmd.none
             )
@@ -135,7 +141,8 @@ view model =
                 ( round model.width, round model.height )
                 []
                 [ clearScreen model.width model.height
-                , Raindrop.render model.raindrop model.debug
+                , Canvas.group []
+                    (List.map (Raindrop.render model.debug) model.raindrops)
                 ]
             ]
         , Html.div
