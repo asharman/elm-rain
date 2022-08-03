@@ -31,10 +31,10 @@ type alias Model =
     }
 
 
-initialModel : Model
-initialModel =
-    { width = 400
-    , height = 400
+initialModel : Float -> Float -> Model
+initialModel width height =
+    { width = width
+    , height = height
     , raindrops = []
     , debug = True
     , numberOfDrops = 10
@@ -59,18 +59,10 @@ type Msg
     | GeneratedDrops (List Raindrop)
 
 
-main : Program () Model Msg
+main : Program ( Float, Float ) Model Msg
 main =
     Browser.element
-        { init =
-            \() ->
-                ( initialModel
-                , Cmd.batch
-                    [ Task.perform GetViewPort getViewport
-                    , Random.generate GeneratedDrops
-                        (Random.list initialModel.numberOfDrops (Raindrop.randomRainDrop initialModel.width))
-                    ]
-                )
+        { init = init
         , view = view
         , update = update
         , subscriptions =
@@ -80,6 +72,18 @@ main =
                     , onResize BrowserResized
                     ]
         }
+
+
+init : ( Float, Float ) -> ( Model, Cmd Msg )
+init ( width, height ) =
+    let
+        model =
+            initialModel width height
+    in
+    ( model
+    , Random.generate GeneratedDrops
+        (Random.list model.numberOfDrops (Raindrop.randomRainDrop model.width))
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
