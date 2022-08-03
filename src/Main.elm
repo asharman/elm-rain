@@ -35,9 +35,9 @@ initialModel : Model
 initialModel =
     { width = 400
     , height = 400
-    , raindrops = [ Raindrop.centeredRainDrop 400 400 ]
+    , raindrops = []
     , debug = True
-    , numberOfDrops = 1
+    , numberOfDrops = 10
     , seed = Random.initialSeed 1
     }
 
@@ -56,12 +56,21 @@ type Msg
     | BrowserResized Int Int
     | DebugChecked Bool
     | NumberOfDropsChanged Int
+    | GeneratedDrops (List Raindrop)
 
 
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \() -> ( initialModel, Task.perform GetViewPort getViewport )
+        { init =
+            \() ->
+                ( initialModel
+                , Cmd.batch
+                    [ Task.perform GetViewPort getViewport
+                    , Random.generate GeneratedDrops
+                        (Random.list initialModel.numberOfDrops (Raindrop.randomRainDrop initialModel.width))
+                    ]
+                )
         , view = view
         , update = update
         , subscriptions =
@@ -80,13 +89,19 @@ update msg model =
             let
                 ( newDrops, newSeed ) =
                     List.foldl
-                        (\drop ( acc, _ ) ->
+                        (\drop ( acc, oldSeed ) ->
                             drop
-                                |> Raindrop.update deltaTime (toWorldInfo model)
+                                |> Raindrop.update deltaTime (toWorldInfo model) oldSeed
                                 |> Tuple.mapFirst (List.singleton >> List.append acc)
                         )
                         ( [], model.seed )
-                        model.raindrops
+                        (List.filter
+                            (\drop ->
+                                (List.length model.raindrops <= model.numberOfDrops)
+                                    || not (Raindrop.isRaindropOffScreen model.height drop)
+                            )
+                            model.raindrops
+                        )
             in
             ( { model
                 | raindrops = newDrops
@@ -122,7 +137,18 @@ update msg model =
             ( { model | debug = value }, Cmd.none )
 
         NumberOfDropsChanged numOfDrops ->
-            ( { model | numberOfDrops = numOfDrops }, Cmd.none )
+            let
+                numberToGenerate =
+                    max 0 numOfDrops - List.length model.raindrops
+            in
+            ( { model | numberOfDrops = numOfDrops }
+            , Random.generate GeneratedDrops (Random.list numberToGenerate (Raindrop.randomRainDrop model.width))
+            )
+
+        GeneratedDrops newDrops ->
+            ( { model | raindrops = newDrops ++ model.raindrops }
+            , Cmd.none
+            )
 
 
 view : Model -> Html Msg

@@ -1,4 +1,4 @@
-module Raindrop exposing (Raindrop, centeredRainDrop, position, randomRainDrop, render, update)
+module Raindrop exposing (Raindrop, centeredRainDrop, isRaindropOffScreen, position, randomRainDrop, render, update)
 
 import Canvas
 import Canvas.Settings as Canvas
@@ -58,18 +58,18 @@ render debug (Internal drop) =
         ]
 
 
-update : Float -> WorldInfo -> Raindrop -> ( Raindrop, Random.Seed )
-update deltaTime worldInfo (Internal drop) =
+update : Float -> WorldInfo -> Random.Seed -> Raindrop -> ( Raindrop, Random.Seed )
+update deltaTime worldInfo newSeed (Internal drop) =
     let
         scaledVelocity =
             Vector.scale deltaTime Constants.gravity
 
         ( updatedPosition, seed ) =
-            if isRaindropOffScreen worldInfo.canvasHeight drop.position then
-                Random.step (Vector.randomVectorAboveCanvas worldInfo.canvasWidth) worldInfo.randomSeed
+            if isRaindropOffScreen worldInfo.canvasHeight (Internal drop) then
+                Random.step (Vector.randomVectorAboveCanvas worldInfo.canvasWidth) newSeed
 
             else
-                ( Vector.add drop.position scaledVelocity, worldInfo.randomSeed )
+                ( Vector.add drop.position scaledVelocity, newSeed )
     in
     ( Internal
         { drop
@@ -80,9 +80,9 @@ update deltaTime worldInfo (Internal drop) =
     )
 
 
-isRaindropOffScreen : Float -> Vector -> Bool
-isRaindropOffScreen screenHeight ( _, yPos ) =
-    yPos > screenHeight
+isRaindropOffScreen : Float -> Raindrop -> Bool
+isRaindropOffScreen screenHeight (Internal drop) =
+    Tuple.second drop.position > screenHeight
 
 
 renderDebug : Raindrop -> Canvas.Renderable
