@@ -1,7 +1,6 @@
 module Main exposing (Model, Msg, main)
 
 import Browser
-import Browser.Dom exposing (Viewport, getViewport)
 import Browser.Events exposing (onAnimationFrameDelta, onResize)
 import Canvas
 import Canvas.Settings as Canvas
@@ -14,7 +13,6 @@ import Json.Decode as Decode
 import List
 import Raindrop exposing (Raindrop)
 import Random
-import Task
 
 
 
@@ -52,7 +50,6 @@ toWorldInfo model =
 
 type Msg
     = Frame Float
-    | GetViewPort Viewport
     | BrowserResized Int Int
     | DebugChecked Bool
     | NumberOfDropsChanged Int
@@ -110,14 +107,6 @@ update msg model =
             ( { model
                 | raindrops = newDrops
                 , seed = newSeed
-              }
-            , Cmd.none
-            )
-
-        GetViewPort data ->
-            ( { model
-                | width = data.viewport.width
-                , height = data.viewport.height
               }
             , Cmd.none
             )

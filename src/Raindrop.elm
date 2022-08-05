@@ -1,4 +1,4 @@
-module Raindrop exposing (Raindrop, centeredRainDrop, isRaindropOffScreen, position, randomRainDrop, render, update)
+module Raindrop exposing (Raindrop, isRaindropOffScreen, randomRainDrop, render, update)
 
 import Canvas
 import Canvas.Settings as Canvas
@@ -27,20 +27,6 @@ randomRainDrop width =
                 }
         )
         (Vector.randomVectorAboveCanvas width)
-
-
-centeredRainDrop : Float -> Float -> Raindrop
-centeredRainDrop width height =
-    Internal
-        { color = Color.white
-        , position = ( width / 2, height / 2 )
-        , velocity = Constants.gravity
-        }
-
-
-position : Raindrop -> Vector
-position (Internal data) =
-    data.position
 
 
 render : Bool -> Raindrop -> Canvas.Renderable
