@@ -14,20 +14,23 @@ type Raindrop
         { color : Color
         , position : Vector
         , velocity : Vector
+        , distanceFromScreen : Float
         }
 
 
 randomRainDrop : Float -> Random.Generator Raindrop
 randomRainDrop width =
-    Random.map
-        (\pos ->
+    Random.map2
+        (\pos distance ->
             Internal
                 { color = Color.white
                 , position = pos
                 , velocity = Constants.gravity
+                , distanceFromScreen = distance
                 }
         )
         (Vector.randomVectorAboveCanvas width)
+        (Random.float 0.4 1.0)
 
 
 render : WorldInfo -> Raindrop -> Canvas.Renderable
@@ -54,12 +57,12 @@ render worldInfo (Internal drop) =
         , Canvas.shapes
             [ Canvas.fill drop.color
             , Canvas.transform
-                [ Canvas.translate xPos (yPos + 15)
+                [ Canvas.translate xPos (yPos + 15 * drop.distanceFromScreen)
                 , Canvas.rotate <| atan2 -xVel yVel
-                , Canvas.translate -xPos (-yPos + 15)
+                , Canvas.translate -xPos (-yPos + 15 * drop.distanceFromScreen)
                 ]
             ]
-            [ Canvas.rect drop.position 4 30 ]
+            [ Canvas.rect drop.position (4 * drop.distanceFromScreen) (30 * drop.distanceFromScreen) ]
         ]
 
 
@@ -67,23 +70,20 @@ update : Float -> WorldInfo -> Random.Seed -> Raindrop -> ( Raindrop, Random.See
 update deltaTime worldInfo newSeed (Internal drop) =
     let
         scaledVelocity =
-            Vector.scale (deltaTime * 0.35) <|
-                Vector.add worldInfo.gravity ( worldInfo.windDirection, 0 )
-
-        ( updatedPosition, seed ) =
-            if isRaindropOffScreen worldInfo.canvasHeight (Internal drop) then
-                Random.step (Vector.randomVectorAboveCanvas worldInfo.canvasWidth) newSeed
-
-            else
-                ( Vector.add drop.position scaledVelocity, newSeed )
+            Vector.scale (deltaTime * 0.5 * drop.distanceFromScreen) <|
+                Vector.add worldInfo.gravity ( worldInfo.windDirection * 0.75, 0 )
     in
-    ( Internal
-        { drop
-            | velocity = scaledVelocity
-            , position = updatedPosition
-        }
-    , seed
-    )
+    if isRaindropOffScreen worldInfo.canvasHeight (Internal drop) then
+        Random.step (randomRainDrop worldInfo.canvasWidth) newSeed
+
+    else
+        ( Internal
+            { drop
+                | velocity = scaledVelocity
+                , position = Vector.add drop.position scaledVelocity
+            }
+        , newSeed
+        )
 
 
 isRaindropOffScreen : Float -> Raindrop -> Bool
