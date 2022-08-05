@@ -29,7 +29,7 @@ scale factor ( x, y ) =
 
 randomVectorAboveCanvas : Float -> Random.Generator Vector
 randomVectorAboveCanvas width =
-    Random.map2 (\w h -> ( w, h )) (Random.float -250.0 (width + 250)) (Random.float -500.0 -10.0)
+    Random.map2 (\w h -> ( w, h )) (Random.float -500.0 (width + 500)) (Random.float -500.0 -50.0)
 
 
 renderArrow :
