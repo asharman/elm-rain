@@ -55,8 +55,7 @@ render worldInfo (Internal drop) =
             [ Canvas.fill drop.color
             , Canvas.transform
                 [ Canvas.translate xPos (yPos + 15)
-                , Canvas.rotate <|
-                    Basics.clamp (-Basics.pi / 10) (Basics.pi / 10) (atan2 -xVel yVel)
+                , Canvas.rotate <| atan2 -xVel yVel
                 , Canvas.translate -xPos (-yPos + 15)
                 ]
             ]
