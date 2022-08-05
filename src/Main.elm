@@ -26,6 +26,7 @@ type alias Model =
     , debug : Bool
     , numberOfDrops : Int
     , seed : Random.Seed
+    , windDirection : Float
     }
 
 
@@ -37,6 +38,7 @@ initialModel width height =
     , debug = True
     , numberOfDrops = 10
     , seed = Random.initialSeed 1
+    , windDirection = 0
     }
 
 
@@ -45,6 +47,9 @@ toWorldInfo model =
     { canvasHeight = model.height
     , canvasWidth = model.width
     , randomSeed = model.seed
+    , windDirection = model.windDirection
+    , gravity = Constants.gravity
+    , debug = model.debug
     }
 
 
@@ -52,6 +57,7 @@ type Msg
     = Frame Float
     | BrowserResized Int Int
     | DebugChecked Bool
+    | WindChanged Float
     | NumberOfDropsChanged Int
     | GeneratedDrops (List Raindrop)
 
@@ -129,6 +135,9 @@ update msg model =
         DebugChecked value ->
             ( { model | debug = value }, Cmd.none )
 
+        WindChanged direction ->
+            ( { model | windDirection = direction }, Cmd.none )
+
         NumberOfDropsChanged numOfDrops ->
             let
                 numberToGenerate =
@@ -161,13 +170,14 @@ view model =
                 []
                 [ clearScreen model.width model.height
                 , Canvas.group []
-                    (List.map (Raindrop.render model.debug) model.raindrops)
+                    (List.map (Raindrop.render (toWorldInfo model)) model.raindrops)
                 ]
             ]
         , Html.div
             [ Attributes.style "position" "absolute"
             , Attributes.style "bottom" "1rem"
             , Attributes.style "left" "1rem"
+            , Attributes.class "stack"
             ]
             [ Html.label
                 [ Attributes.style "display" "flex"
@@ -184,7 +194,27 @@ view model =
                 , Html.text "Debug"
                 ]
             , Html.label
-                []
+                [ Attributes.style "display" "flex"
+                , Attributes.style "align-items" "center"
+                , Attributes.style "gap" "0.5rem"
+                ]
+                [ Html.input
+                    [ Attributes.type_ "range"
+                    , Attributes.id "wind"
+                    , Attributes.min "-1"
+                    , Attributes.max "1"
+                    , Attributes.step "0.01"
+                    , Attributes.value <| String.fromFloat model.windDirection
+                    , onRangeInput WindChanged
+                    ]
+                    []
+                , Html.text "Wind Direction"
+                ]
+            , Html.label
+                [ Attributes.style "display" "flex"
+                , Attributes.style "align-items" "center"
+                , Attributes.style "gap" "0.5rem"
+                ]
                 [ Html.input
                     [ Attributes.type_ "number"
                     , Attributes.max "100"
@@ -193,9 +223,26 @@ view model =
                     , onPositiveIntInput NumberOfDropsChanged
                     ]
                     []
+                , Html.text "Raindrop Count"
                 ]
             ]
         ]
+
+
+onRangeInput : (Float -> Msg) -> Html.Attribute Msg
+onRangeInput tagger =
+    let
+        floatDecoder =
+            \val ->
+                case String.toFloat val of
+                    Just f ->
+                        Decode.succeed f
+
+                    Nothing ->
+                        Decode.fail "Not an Integer"
+    in
+    Events.on "input" <|
+        Decode.map tagger (Events.targetValue |> Decode.andThen floatDecoder)
 
 
 onPositiveIntInput : (Int -> Msg) -> Html.Attribute Msg

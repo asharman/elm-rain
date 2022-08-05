@@ -8,6 +8,9 @@ type alias WorldInfo =
     { canvasHeight : Float
     , canvasWidth : Float
     , randomSeed : Random.Seed
+    , windDirection : Float
+    , gravity : Vector
+    , debug : Bool
     }
 
 
@@ -18,4 +21,4 @@ origin =
 
 gravity : Vector
 gravity =
-    ( 0, 0.75 )
+    ( 0, 1 )
