@@ -18,8 +18,8 @@ type Raindrop
         }
 
 
-randomRainDrop : Float -> Random.Generator Raindrop
-randomRainDrop width =
+randomRainDrop : WorldInfo -> Random.Generator Raindrop
+randomRainDrop worldInfo =
     Random.map2
         (\pos distance ->
             Internal
@@ -29,7 +29,7 @@ randomRainDrop width =
                 , distanceFromScreen = distance
                 }
         )
-        (Vector.randomVectorAboveCanvas width)
+        (Vector.randomVectorAboveCanvas worldInfo.canvasWidth)
         (Random.float 0.4 1.0)
 
 
@@ -69,12 +69,24 @@ render worldInfo (Internal drop) =
 update : Float -> WorldInfo -> Random.Seed -> Raindrop -> ( Raindrop, Random.Seed )
 update deltaTime worldInfo newSeed (Internal drop) =
     let
+        ( xPos, yPos ) =
+            drop.position
+
+        acceleration =
+            List.foldl Vector.add Constants.origin <|
+                [ worldInfo.gravity
+                , ( worldInfo.windDirection * 0.5, 0 )
+                , Vector.scale 0.25 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
+                ]
+
+        velocity =
+            Vector.limitMagnitude 5 (Vector.add drop.velocity acceleration)
+
         scaledVelocity =
-            Vector.scale (deltaTime * 0.5 * drop.distanceFromScreen) <|
-                Vector.add worldInfo.gravity ( worldInfo.windDirection * 0.75, 0 )
+            Vector.scale (deltaTime * 0.5 * drop.distanceFromScreen) velocity
     in
     if isRaindropOffScreen worldInfo.canvasHeight (Internal drop) then
-        Random.step (randomRainDrop worldInfo.canvasWidth) newSeed
+        Random.step (randomRainDrop worldInfo) newSeed
 
     else
         ( Internal

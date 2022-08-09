@@ -1,6 +1,7 @@
-module Constants exposing (WorldInfo, gravity, origin)
+module Constants exposing (WorldInfo, gravity, origin, windNoiseFromSeed)
 
 import Random
+import Simplex
 import Vector exposing (Vector)
 
 
@@ -10,6 +11,7 @@ type alias WorldInfo =
     , randomSeed : Random.Seed
     , windDirection : Float
     , gravity : Vector
+    , windAtPosition : Float -> Float -> Float -> Vector
     , debug : Bool
     }
 
@@ -22,3 +24,9 @@ origin =
 gravity : Vector
 gravity =
     ( 0, 1 )
+
+
+windNoiseFromSeed : Int -> Float -> Float -> Float -> Float -> Float
+windNoiseFromSeed =
+    Simplex.fractal4d { scale = 15, steps = 10, stepSize = 2.0, persistence = 2.0 }
+        << Simplex.permutationTableFromInt

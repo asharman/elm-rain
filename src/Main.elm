@@ -13,6 +13,7 @@ import Json.Decode as Decode
 import List
 import Raindrop exposing (Raindrop)
 import Random
+import Vector exposing (Vector)
 
 
 
@@ -27,6 +28,8 @@ type alias Model =
     , numberOfDrops : Int
     , seed : Random.Seed
     , windDirection : Float
+    , windNoise : Float -> Float -> Float -> Float -> Float
+    , time : Float
     }
 
 
@@ -39,16 +42,26 @@ initialModel width height =
     , numberOfDrops = 10
     , seed = Random.initialSeed 1
     , windDirection = 0
+    , windNoise = Constants.windNoiseFromSeed 1
+    , time = 0
     }
 
 
 toWorldInfo : Model -> WorldInfo
 toWorldInfo model =
+    let
+        windAtPosition =
+            \x y z ->
+                model.windNoise model.time x y z
+                    |> (*) (2 * pi)
+                    |> (\turn -> ( cos turn, sin turn ))
+    in
     { canvasHeight = model.height
     , canvasWidth = model.width
     , randomSeed = model.seed
     , windDirection = model.windDirection
     , gravity = Constants.gravity
+    , windAtPosition = windAtPosition
     , debug = model.debug
     }
 
@@ -85,7 +98,7 @@ init ( width, height ) =
     in
     ( model
     , Random.generate GeneratedDrops
-        (Random.list model.numberOfDrops (Raindrop.randomRainDrop model.width))
+        (Random.list model.numberOfDrops (Raindrop.randomRainDrop (toWorldInfo model)))
     )
 
 
@@ -113,6 +126,7 @@ update msg model =
             ( { model
                 | raindrops = newDrops
                 , seed = newSeed
+                , time = model.time + deltaTime
               }
             , Cmd.none
             )
@@ -144,7 +158,10 @@ update msg model =
                     max 0 numOfDrops - List.length model.raindrops
             in
             ( { model | numberOfDrops = numOfDrops }
-            , Random.generate GeneratedDrops (Random.list numberToGenerate (Raindrop.randomRainDrop model.width))
+            , Random.generate GeneratedDrops
+                (Random.list numberToGenerate
+                    (Raindrop.randomRainDrop (toWorldInfo model))
+                )
             )
 
         GeneratedDrops newDrops ->
