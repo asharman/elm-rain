@@ -25,12 +25,16 @@ randomRainDrop worldInfo =
             Internal
                 { color = Color.white
                 , position = pos
-                , velocity = Constants.gravity
+                , velocity = ( 0, 0 )
                 , distanceFromScreen = distance
                 }
         )
         (Vector.randomVectorAboveCanvas worldInfo.canvasWidth)
-        (Random.float 0.4 1.0)
+        (Random.float 0.2 1.0)
+        |> Random.map
+            (\(Internal drop) ->
+                Internal { drop | velocity = acceleration worldInfo (Internal drop) }
+            )
 
 
 render : WorldInfo -> Raindrop -> Canvas.Renderable
@@ -57,30 +61,24 @@ render worldInfo (Internal drop) =
         , Canvas.shapes
             [ Canvas.fill drop.color
             , Canvas.transform
-                [ Canvas.translate xPos (yPos + 15 * drop.distanceFromScreen)
+                [ Canvas.translate xPos (yPos + 30 * drop.distanceFromScreen)
                 , Canvas.rotate <| atan2 -xVel yVel
-                , Canvas.translate -xPos (-yPos + 15 * drop.distanceFromScreen)
+                , Canvas.translate -xPos (-yPos + 30 * drop.distanceFromScreen)
                 ]
             ]
-            [ Canvas.rect drop.position (4 * drop.distanceFromScreen) (30 * drop.distanceFromScreen) ]
+            [ Canvas.rect drop.position (4 * drop.distanceFromScreen) (60 * drop.distanceFromScreen) ]
         ]
 
 
 update : Float -> WorldInfo -> Random.Seed -> Raindrop -> ( Raindrop, Random.Seed )
 update deltaTime worldInfo newSeed (Internal drop) =
     let
-        ( xPos, yPos ) =
-            drop.position
-
-        acceleration =
-            List.foldl Vector.add Constants.origin <|
-                [ worldInfo.gravity
-                , ( worldInfo.windDirection * 0.5, 0 )
-                , Vector.scale 0.25 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
-                ]
-
         velocity =
-            Vector.limitMagnitude 5 (Vector.add drop.velocity acceleration)
+            Vector.limitMagnitude 5
+                (Vector.add
+                    drop.velocity
+                    (acceleration worldInfo (Internal drop))
+                )
 
         scaledVelocity =
             Vector.scale (deltaTime * 0.5 * drop.distanceFromScreen) velocity
@@ -96,6 +94,19 @@ update deltaTime worldInfo newSeed (Internal drop) =
             }
         , newSeed
         )
+
+
+acceleration : WorldInfo -> Raindrop -> Vector
+acceleration worldInfo (Internal drop) =
+    let
+        ( xPos, yPos ) =
+            drop.position
+    in
+    List.foldl Vector.add Constants.origin <|
+        [ worldInfo.gravity
+        , ( worldInfo.windDirection, 0 )
+        , Vector.scale 0.2 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
+        ]
 
 
 isRaindropOffScreen : Float -> Raindrop -> Bool

@@ -28,5 +28,5 @@ gravity =
 
 windNoiseFromSeed : Int -> Float -> Float -> Float -> Float -> Float
 windNoiseFromSeed =
-    Simplex.fractal4d { scale = 15, steps = 10, stepSize = 2.0, persistence = 2.0 }
+    Simplex.fractal4d { scale = 30, steps = 1, stepSize = 0.1, persistence = 2.0 }
         << Simplex.permutationTableFromInt
