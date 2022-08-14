@@ -13,14 +13,9 @@ import Json.Decode as Decode
 import List
 import Raindrop exposing (Raindrop)
 import Random
-import Vector exposing (Vector)
 
 
-
--- CONSTANTS
-
-
-type alias Model =
+type alias State =
     { width : Float
     , height : Float
     , raindrops : List Raindrop
@@ -33,36 +28,75 @@ type alias Model =
     }
 
 
+type Model
+    = Playing State
+    | Paused State
+
+
+toState : Model -> State
+toState model =
+    case model of
+        Playing state ->
+            state
+
+        Paused state ->
+            state
+
+
+updateState : Model -> State -> Model
+updateState model =
+    case model of
+        Playing _ ->
+            Playing
+
+        Paused _ ->
+            Paused
+
+
+isPaused : Model -> Bool
+isPaused model =
+    case model of
+        Playing _ ->
+            False
+
+        Paused _ ->
+            True
+
+
 initialModel : Float -> Float -> Model
 initialModel width height =
-    { width = width
-    , height = height
-    , raindrops = []
-    , debug = True
-    , numberOfDrops = 10
-    , seed = Random.initialSeed 1
-    , windDirection = 0
-    , windNoise = Constants.windNoiseFromSeed 1
-    , time = 0
-    }
+    Playing
+        { width = width
+        , height = height
+        , raindrops = []
+        , debug = False
+        , numberOfDrops = 100
+        , seed = Random.initialSeed 1
+        , windDirection = 0
+        , windNoise = Constants.windNoiseFromSeed 1
+        , time = 0
+        }
 
 
 toWorldInfo : Model -> WorldInfo
 toWorldInfo model =
     let
+        state =
+            toState model
+
         windAtPosition =
             \x y z ->
-                model.windNoise model.time x y z
+                state.windNoise state.time x y z
                     |> (*) (2 * pi)
                     |> (\turn -> ( cos turn, sin turn ))
     in
-    { canvasHeight = model.height
-    , canvasWidth = model.width
-    , randomSeed = model.seed
-    , windDirection = model.windDirection
+    { canvasHeight = state.height
+    , canvasWidth = state.width
+    , randomSeed = state.seed
+    , windDirection = state.windDirection
     , gravity = Constants.gravity
     , windAtPosition = windAtPosition
-    , debug = model.debug
+    , debug = state.debug
     }
 
 
@@ -70,6 +104,7 @@ type Msg
     = Frame Float
     | BrowserResized Int Int
     | DebugChecked Bool
+    | PauseChecked Bool
     | WindChanged Float
     | NumberOfDropsChanged Int
     | GeneratedDrops (List Raindrop)
@@ -95,17 +130,24 @@ init ( width, height ) =
     let
         model =
             initialModel width height
+
+        state =
+            toState model
     in
     ( model
     , Random.generate GeneratedDrops
-        (Random.list model.numberOfDrops (Raindrop.randomRainDrop (toWorldInfo model)))
+        (Random.list state.numberOfDrops (Raindrop.randomRainDrop (toWorldInfo model)))
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Frame deltaTime ->
+    let
+        internalState =
+            toState model
+    in
+    case ( model, msg ) of
+        ( Playing state, Frame deltaTime ) ->
             let
                 ( newDrops, newSeed ) =
                     List.foldl
@@ -114,24 +156,28 @@ update msg model =
                                 |> Raindrop.update deltaTime (toWorldInfo model) oldSeed
                                 |> Tuple.mapFirst (List.singleton >> List.append acc)
                         )
-                        ( [], model.seed )
+                        ( [], state.seed )
                         (List.filter
                             (\drop ->
-                                (List.length model.raindrops <= model.numberOfDrops)
-                                    || not (Raindrop.isRaindropOffScreen model.height drop)
+                                (List.length state.raindrops <= state.numberOfDrops)
+                                    || not (Raindrop.isRaindropOffScreen state.height drop)
                             )
-                            model.raindrops
+                            state.raindrops
                         )
             in
-            ( { model
-                | raindrops = newDrops
-                , seed = newSeed
-                , time = model.time + deltaTime
-              }
+            ( Playing
+                { state
+                    | raindrops = newDrops
+                    , seed = newSeed
+                    , time = state.time + deltaTime
+                }
             , Cmd.none
             )
 
-        BrowserResized w h ->
+        ( Paused _, Frame _ ) ->
+            ( model, Cmd.none )
+
+        ( _, BrowserResized w h ) ->
             let
                 width =
                     toFloat w
@@ -139,39 +185,51 @@ update msg model =
                 height =
                     toFloat h
             in
-            ( { model
-                | width = width
-                , height = height
-              }
+            ( updateState model
+                { internalState
+                    | width = width
+                    , height = height
+                }
             , Cmd.none
             )
 
-        DebugChecked value ->
-            ( { model | debug = value }, Cmd.none )
+        ( _, DebugChecked value ) ->
+            ( updateState model { internalState | debug = value }, Cmd.none )
 
-        WindChanged direction ->
-            ( { model | windDirection = direction }, Cmd.none )
+        ( _, PauseChecked paused ) ->
+            if paused then
+                ( Paused internalState, Cmd.none )
 
-        NumberOfDropsChanged numOfDrops ->
+            else
+                ( Playing internalState, Cmd.none )
+
+        ( _, WindChanged direction ) ->
+            ( updateState model { internalState | windDirection = direction }, Cmd.none )
+
+        ( _, NumberOfDropsChanged numOfDrops ) ->
             let
                 numberToGenerate =
-                    max 0 numOfDrops - List.length model.raindrops
+                    max 0 numOfDrops - List.length internalState.raindrops
             in
-            ( { model | numberOfDrops = numOfDrops }
+            ( updateState model { internalState | numberOfDrops = numOfDrops }
             , Random.generate GeneratedDrops
                 (Random.list numberToGenerate
                     (Raindrop.randomRainDrop (toWorldInfo model))
                 )
             )
 
-        GeneratedDrops newDrops ->
-            ( { model | raindrops = newDrops ++ model.raindrops }
+        ( _, GeneratedDrops newDrops ) ->
+            ( updateState model { internalState | raindrops = newDrops ++ internalState.raindrops }
             , Cmd.none
             )
 
 
 view : Model -> Html Msg
 view model =
+    let
+        state =
+            toState model
+    in
     Html.div
         [ Attributes.style "position" "relative"
         , Attributes.style "padding" "0"
@@ -183,14 +241,14 @@ view model =
             , Attributes.style "align-items" "center"
             ]
             [ Canvas.toHtml
-                ( round model.width, round model.height )
+                ( round state.width, round state.height )
                 []
-                [ clearScreen model.width model.height
+                [ clearScreen state.width state.height
                 , Canvas.group []
-                    (List.map (Raindrop.render (toWorldInfo model)) model.raindrops)
+                    (List.map (Raindrop.render (toWorldInfo model)) state.raindrops)
                 ]
             ]
-        , Html.div
+        , Html.form
             [ Attributes.style "position" "absolute"
             , Attributes.style "bottom" "1rem"
             , Attributes.style "left" "1rem"
@@ -204,11 +262,25 @@ view model =
                     [ Attributes.type_ "checkbox"
                     , Attributes.style "padding" "0"
                     , Attributes.style "margin" "0"
-                    , Attributes.checked model.debug
+                    , Attributes.checked state.debug
                     , Events.onCheck DebugChecked
                     ]
                     []
                 , Html.text "Debug"
+                ]
+            , Html.label
+                [ Attributes.style "display" "flex"
+                , Attributes.style "gap" "0.5rem"
+                ]
+                [ Html.input
+                    [ Attributes.type_ "checkbox"
+                    , Attributes.style "padding" "0"
+                    , Attributes.style "margin" "0"
+                    , Attributes.checked <| isPaused model
+                    , Events.onCheck PauseChecked
+                    ]
+                    []
+                , Html.text "Pause"
                 ]
             , Html.label
                 [ Attributes.style "display" "flex"
@@ -221,7 +293,7 @@ view model =
                     , Attributes.min "-1"
                     , Attributes.max "1"
                     , Attributes.step "0.01"
-                    , Attributes.value <| String.fromFloat model.windDirection
+                    , Attributes.value <| String.fromFloat state.windDirection
                     , onRangeInput WindChanged
                     ]
                     []
@@ -236,7 +308,7 @@ view model =
                     [ Attributes.type_ "number"
                     , Attributes.max "100"
                     , Attributes.min "1"
-                    , Attributes.value (String.fromInt model.numberOfDrops)
+                    , Attributes.value (String.fromInt state.numberOfDrops)
                     , onPositiveIntInput NumberOfDropsChanged
                     ]
                     []
