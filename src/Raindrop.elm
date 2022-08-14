@@ -139,7 +139,7 @@ renderDebug worldInfo (Internal drop) =
             { from = drop.position
             , to =
                 Vector.add drop.position
-                    (Vector.scale 100
+                    (Vector.scale 20
                         (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
                     )
             , color = Color.rgb 1.0 0.0 1.0
@@ -150,12 +150,17 @@ renderDebug worldInfo (Internal drop) =
           else
             Vector.renderArrow
                 { from = drop.position
-                , to = Vector.add drop.position (Vector.scale 150 ( worldInfo.windDirection, 0 ))
+                , to = Vector.add drop.position (Vector.scale 100 ( worldInfo.windDirection, 0 ))
                 , color = Color.rgb 0.25 1.0 0.25
                 }
         , Vector.renderArrow
             { from = drop.position
-            , to = Vector.add drop.position (Vector.scale 10 drop.velocity)
+            , to = Vector.add drop.position (Vector.scale 3 drop.velocity)
+            , color = Color.rgb 1.0 0.5 0.0
+            }
+        , Vector.renderArrow
+            { from = drop.position
+            , to = Vector.add drop.position (Vector.scale 100 (acceleration worldInfo (Internal drop)))
             , color = Color.rgb 1.0 1.0 1.0
             }
         ]
