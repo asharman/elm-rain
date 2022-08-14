@@ -30,7 +30,7 @@ randomRainDrop worldInfo =
                 }
         )
         (Vector.randomVectorAboveCanvas worldInfo.canvasWidth)
-        (Random.float 0.2 1.0)
+        (Random.float 0.3 1.0)
         |> Random.map
             (\(Internal drop) ->
                 Internal { drop | velocity = acceleration worldInfo (Internal drop) }
@@ -105,7 +105,7 @@ acceleration worldInfo (Internal drop) =
     List.foldl Vector.add Constants.origin <|
         [ worldInfo.gravity
         , ( worldInfo.windDirection, 0 )
-        , Vector.scale 0.2 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
+        , Vector.scale 0.15 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
         ]
 
 
@@ -116,6 +116,13 @@ isRaindropOffScreen screenHeight (Internal drop) =
 
 renderDebug : WorldInfo -> Raindrop -> Canvas.Renderable
 renderDebug worldInfo (Internal drop) =
+    let
+        xPos =
+            Tuple.first drop.position
+
+        yPos =
+            Tuple.second drop.position
+    in
     Canvas.group []
         [ Vector.renderArrow
             { from = Constants.origin
@@ -126,6 +133,15 @@ renderDebug worldInfo (Internal drop) =
             { from = drop.position
             , to = Vector.add drop.position (Vector.scale 100 worldInfo.gravity)
             , color = Color.rgb 1.0 0.25 0.25
+            }
+        , Vector.renderArrow
+            { from = drop.position
+            , to =
+                Vector.add drop.position
+                    (Vector.scale 100
+                        (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
+                    )
+            , color = Color.rgb 1.0 0.0 1.0
             }
         , if worldInfo.windDirection == 0 then
             Canvas.text [] Constants.origin ""
