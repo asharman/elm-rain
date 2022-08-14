@@ -62,9 +62,9 @@ render worldInfo (Internal drop) =
         , Canvas.shapes
             [ Canvas.fill drop.color
             , Canvas.transform
-                [ Canvas.translate xPos (yPos + 30 * drop.distanceFromScreen)
+                [ Canvas.translate (xPos - drop.distanceFromScreen) (yPos - drop.distanceFromScreen)
                 , Canvas.rotate <| atan2 -xVel yVel
-                , Canvas.translate -xPos (-yPos + 30 * drop.distanceFromScreen)
+                , Canvas.translate (-xPos - drop.distanceFromScreen) (-yPos - drop.distanceFromScreen)
                 ]
             ]
             [ Canvas.rect drop.position (4 * drop.distanceFromScreen) (60 * drop.distanceFromScreen) ]
