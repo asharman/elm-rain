@@ -20,10 +20,10 @@ type Raindrop
 
 randomRainDrop : WorldInfo -> Random.Generator Raindrop
 randomRainDrop worldInfo =
-    Random.map2
-        (\pos distance ->
+    Random.map3
+        (\pos distance color ->
             Internal
-                { color = Color.white
+                { color = color
                 , position = pos
                 , velocity = ( 0, 0 )
                 , distanceFromScreen = distance
@@ -31,6 +31,7 @@ randomRainDrop worldInfo =
         )
         (Vector.randomVectorAboveCanvas worldInfo.canvasWidth)
         (Random.float 0.3 1.0)
+        Constants.randomColor
         |> Random.map
             (\(Internal drop) ->
                 Internal { drop | velocity = acceleration worldInfo (Internal drop) }
