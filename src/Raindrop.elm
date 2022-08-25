@@ -106,7 +106,7 @@ acceleration worldInfo (Internal drop) =
     List.foldl Vector.add Constants.origin <|
         [ worldInfo.gravity
         , ( worldInfo.windDirection, 0 )
-        , Vector.scale 0.15 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
+        , Vector.scale 0.05 (worldInfo.windAtPosition xPos yPos drop.distanceFromScreen)
         ]
 
 
